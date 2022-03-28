@@ -11,11 +11,11 @@ import java.util.List;
 public class Lox {
     static boolean hadError = false;
 
-    public static void main(String[] args) throws  IOException{
-        if(args.length > 1){
+    public static void main(String[] args) throws IOException {
+        if (args.length > 1) {
             System.out.println("Usage: jlox [script]");
             System.exit(64);
-        } else if (args.length == 1){
+        } else if (args.length == 1) {
             // run code from file
             runFile(args[0]);
         } else {
@@ -24,7 +24,7 @@ public class Lox {
         }
     }
 
-    private static void runFile(String path) throws  IOException {
+    private static void runFile(String path) throws IOException {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
         run(new String(bytes, Charset.defaultCharset()));
 
@@ -32,11 +32,11 @@ public class Lox {
         if (hadError) System.exit(65);
     }
 
-    private static void runPrompt() throws  IOException {
+    private static void runPrompt() throws IOException {
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
 
-        for (;;){
+        for (; ; ) {
             System.out.print("> ");
             String line = reader.readLine();
             if (line == null) break;
@@ -49,15 +49,20 @@ public class Lox {
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
+        Parser parser = new Parser(tokens);
+        Expr expression = parser.parse();
 
-        // For now, just print the tokens.
-        for(Token token: tokens) {
-            System.out.println(token);
-        }
+        if (hadError) return;
+
+        System.out.println(new AstPrinter().print(expression));
     }
 
-    static  void error(int line, String message) {
-        report(line, "", message);
+    static void error(Token token, String message) {
+        if (token.type == TokenType.EOF) {
+            report(token.line, " at end", message);
+        } else {
+            report(token.line, " at '" + token.lexeme + "'", message);
+        }
     }
 
     private static void report(int line, String where, String message) {
